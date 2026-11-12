@@ -1,0 +1,19 @@
+server:
+  port: 8021
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/inventorydb}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:Hamsi@123}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  #  it tells RabbitMQ that our app is running on docker
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest

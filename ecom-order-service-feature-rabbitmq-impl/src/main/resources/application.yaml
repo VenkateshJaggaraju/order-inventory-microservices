@@ -1,0 +1,93 @@
+spring:
+  application:
+    name: ecom-order-service
+  cloud:
+    openfeign:
+      client:
+        config:
+          ecom-inventory-service:
+            connectTimeout: 2000
+            readTimeout: 30000
+#  it tells RabbitMQ that our app is running on docker
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+server:
+  port: 8020
+
+logging:
+  level:
+    org.codesnippet.ecomorderservice.client: DEBUG
+    com.netflix.discovery: DEBUG
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    registry-fetch-interval-seconds: 30
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+  instance:
+    lease-renewal-interval-in-seconds: 30
+
+resilience4j:
+  ratelimiter:
+    instances:
+      inventoryService:
+        limit-for-period: 2 # 2 requests per 10 second
+        limit-refresh-period: 10s # 10 seconds to refresh limits
+        timeout-duration: 0s
+  circuitbreaker:
+    instances:
+      inventoryServiceCircuitBreaker:
+
+        # Sliding Window Configuration
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 6
+        minimum-number-of-calls: 1
+
+        # Failure Threshold
+        failure-rate-threshold: 50
+
+
+        # Open State Configuration
+        wait-duration-in-open-state: 10s
+
+        # Half Open Configuration
+        permitted-number-of-calls-in-half-open-state: 3
+        max-wait-duration-in-half-open-state: 5s
+        automatic-transition-from-open-to-half-open-enabled: true
+
+        record-exceptions:
+          - java.lang.RuntimeException
+          - java.io.IOException
+          - org.springframework.web.client.HttpServerErrorException
+
+        ignore-exceptions:
+            - java.lang.IllegalArgumentException
+  bulkhead:
+    instances:
+      inventoryServiceBulkhead:
+        max-concurrent-calls: 2
+        max-wait-duration: 10s
+  thread-pool-bulkhead:
+    instances:
+      inventoryThreadPool:
+        max-thread-pool-size: 3
+        core-thread-pool-size: 1
+        queue-capacity: 1
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: http://localhost:4318/v1/traces
+
